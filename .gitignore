@@ -1,0 +1,21 @@
+### Java gitignore
+
+# Compiled class file
+*.class
+.idea/*
+out/*
+
+# file
+*.log
+*.iml
+!.gitignore
+
+# Package Files #
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+
