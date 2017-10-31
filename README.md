@@ -1,2 +1,2 @@
-# architecture-project
+# Architecture-project
 This project is done as an assignment  for architecture machine problem.
