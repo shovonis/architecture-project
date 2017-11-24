@@ -1,0 +1,16 @@
+Level:L1
+Line:32
+Way:2
+Size:16K
+HitTime:4
+WritePolicy:WriteBack
+AllocationPolicy:NoWriteAllocate
+Level:L2
+Line:32
+Way:2
+Size:4096K
+HitTime:50
+WritePolicy:WriteThrough
+AllocationPolicy:WriteAllocate
+Level:Main
+HitTime:4000

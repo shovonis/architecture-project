@@ -1,0 +1,72 @@
+You are supposed to implement a memory hierarchy based on the given configuration parameters. The parameters will be given in a mem.conf file. 
+You need to read the file and initialize your memory hierarchy accordingly. You can assume that the main memory has infinite size and contains
+every byte. You will also be given an access.in file which will contain a sequence
+of ld and st operations. Your program will read the operations from access.in file and execute them in the memory hierarchy. At the end, it will output
+the following information:
+Level:L1
+Access:xxx
+Hit:yyy
+Miss:zzz
+(this pattern will repeat for the other cache levels)
+TotalTime:zzz
+
+>>>>>>>>>>>>>Example conf file 1>>>>>>>>>>>>
+Level:L1
+Line:32
+Way:1
+Size:32K
+HitTime:1
+WritePolicy:WriteThrough
+AllocationPolicy:NoWriteAllocate
+Level:L2
+Line:32
+Way:2
+Size:4096K
+HitTime:50
+WritePolicy:WriteBack
+AllocationPolicy:WriteAllocate
+Level:L3
+Line:64
+Way:4
+Size:16384K
+HitTime:200
+WritePolicy:WriteBack
+AllocationPolicy:WriteAllocate
+Level:Main
+HitTime:1000
+
+
+>>>>>>>>>>>>>Example conf file 2>>>>>>>>>>>>
+Level:L1
+Line:32
+Way:2
+Size:16K
+HitTime:4
+WritePolicy:WriteBack
+AllocationPolicy:NoWriteAllocate
+Level:L2
+Line:32
+Way:2
+Size:4096K
+HitTime:50
+WritePolicy:WriteThrough
+AllocationPolicy:WriteAllocate
+Level:Main
+HitTime:4000
+
+>>>>>>>>>>>>>Example access file>>>>>>>>>>>>
+ld 100
+ld 200
+st 300
+st 400
+ld 200
+ld 500
+ld 400
+st 200
+st 400
+ld 200
+ld 100
+ld 200
+st 300
+st 400
+ld 300
