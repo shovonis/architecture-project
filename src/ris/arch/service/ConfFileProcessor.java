@@ -1,29 +1,27 @@
-package ris.arch.util;
+package ris.arch.service;
 
 import ris.arch.domain.CacheConf;
-import ris.arch.domain.MemoryConf;
+import ris.arch.domain.MainMemory;
+import ris.arch.util.FileName;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Stream;
 
-public class FileProcessorUtil {
+public class ConfFileProcessor {
 
     private BufferedReader bufferedReader = null;
     private FileReader fileReader = null;
     private List<CacheConf> listOfCacheConf = null;
-    private MemoryConf mainMemoryConf = null;
+    private MainMemory mainMainMemory = null;
 
-    private void initializeFile() {
+    private void initializeFile(String fileName) {
 
         try {
-            fileReader = new FileReader(FileName.CONF_FILE);
+            fileReader = new FileReader(fileName);
             bufferedReader = new BufferedReader(fileReader);
 
         } catch (FileNotFoundException e) {
@@ -31,19 +29,19 @@ public class FileProcessorUtil {
         }
     }
 
-    public void processConfFile() {
+    public void processConfFile(String fileName) {
         String line;
         String inputConf;
         listOfCacheConf = new LinkedList<>();
         try {
-            initializeFile();
+            initializeFile(fileName);
 
             while ((line = bufferedReader.readLine()) != null) {
                 inputConf = line.split(":")[1];
                 if (inputConf.startsWith("L")) {
                     CacheConf cacheConf = new CacheConf();
                     cacheConf.setLevel(line.split(":")[1]);
-                    cacheConf.setLine(bufferedReader.readLine().split(":")[1]);
+                    cacheConf.setLine(Integer.parseInt(bufferedReader.readLine().split(":")[1]));
                     cacheConf.setWay(Integer.parseInt(bufferedReader.readLine().split(":")[1]));
                     cacheConf.setSize(bufferedReader.readLine().split(":")[1]);
                     cacheConf.setHitTime(Long.parseLong(bufferedReader.readLine().split(":")[1]));
@@ -55,11 +53,11 @@ public class FileProcessorUtil {
                 }
 
                 if (inputConf.startsWith("M")) {
-                    mainMemoryConf = new MemoryConf();
-                    mainMemoryConf.setLevel(line.split(":")[1]);
-                    mainMemoryConf.setHitTime(Long.parseLong(bufferedReader.readLine().split(":")[1]));
+                    mainMainMemory = new MainMemory();
+                    mainMainMemory.setLevel(line.split(":")[1]);
+                    mainMainMemory.setHitTime(Long.parseLong(bufferedReader.readLine().split(":")[1]));
 
-                    System.out.println(mainMemoryConf);
+                    System.out.println(mainMainMemory);
                 }
 
             }
@@ -70,34 +68,14 @@ public class FileProcessorUtil {
 
     }
 
+
+
     public List<CacheConf> getListOfCacheConf() {
         return listOfCacheConf;
     }
 
-    public void setListOfCacheConf(List<CacheConf> listOfCacheConf) {
-        this.listOfCacheConf = listOfCacheConf;
+    public MainMemory getMainMainMemory() {
+        return mainMainMemory;
     }
-
-    public MemoryConf getMainMemoryConf() {
-        return mainMemoryConf;
-    }
-
-    public void setMainMemoryConf(MemoryConf mainMemoryConf) {
-        this.mainMemoryConf = mainMemoryConf;
-    }
-
-    //    private CacheConf fileToCacheConverter() throws IOException {
-//        Stream<String> lines = Files.lines(Paths.get(FileName.CONF_FILE)).skip(7).limit(7);
-//        lines.forEachOrdered(System.out::println);
-////
-//        return null;
-//
-//    }
-//
-//    private MemoryConf fileToMemoryConverter(String line) {
-//
-//        return null;
-//
-//    }
 
 }

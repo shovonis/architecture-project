@@ -1,6 +1,6 @@
 package ris.arch.domain;
 
-public class MemoryConf {
+public class MainMemory {
     private String level;
     private long hitTime;
 
@@ -22,7 +22,7 @@ public class MemoryConf {
 
     @Override
     public String toString() {
-        return "MemoryConf{" +
+        return "MainMemory{" +
                 "level='" + level + '\'' +
                 ", hitTime=" + hitTime +
                 '}';

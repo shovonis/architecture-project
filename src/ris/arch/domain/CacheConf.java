@@ -2,7 +2,7 @@ package ris.arch.domain;
 
 public class CacheConf {
     private String level;
-    private String line;
+    private int line;
     private int way;
     private String size;
     private long hitTime;
@@ -18,11 +18,11 @@ public class CacheConf {
         this.level = level;
     }
 
-    public String getLine() {
+    public int getLine() {
         return line;
     }
 
-    public void setLine(String line) {
+    public void setLine(int line) {
         this.line = line;
     }
 
