@@ -7,6 +7,15 @@ public class CacheLine {
     private long time = 0;
     private int tag;
 
+    //Meta Data of the Cache Lines. This is duplicated intentionally for ease of access.
+    private int line;
+    private int way;
+    private String size;
+    private long hitTime;
+    private String writePolicy;
+    private String allocationPolicy;
+
+
     public String getLevel() {
         return level;
     }
@@ -47,14 +56,72 @@ public class CacheLine {
         this.time = time;
     }
 
+    public int getTag() {
+        return tag;
+    }
+
+    public int getLine() {
+        return line;
+    }
+
+    public void setLine(int line) {
+        this.line = line;
+    }
+
+    public int getWay() {
+        return way;
+    }
+
+    public void setWay(int way) {
+        this.way = way;
+    }
+
+    public String getSize() {
+        return size;
+    }
+
+    public void setSize(String size) {
+        this.size = size;
+    }
+
+    public long getHitTime() {
+        return hitTime;
+    }
+
+    public void setHitTime(long hitTime) {
+        this.hitTime = hitTime;
+    }
+
+    public String getWritePolicy() {
+        return writePolicy;
+    }
+
+    public void setWritePolicy(String writePolicy) {
+        this.writePolicy = writePolicy;
+    }
+
+    public String getAllocationPolicy() {
+        return allocationPolicy;
+    }
+
+    public void setAllocationPolicy(String allocationPolicy) {
+        this.allocationPolicy = allocationPolicy;
+    }
+
     @Override
     public String toString() {
-        return "CacheLine{" +
+        return "Block{" +
                 "level='" + level + '\'' +
                 ", validBit=" + validBit +
                 ", dirtyBit=" + dirtyBit +
                 ", time=" + time +
                 ", tag=" + tag +
+                ", line=" + line +
+                ", way=" + way +
+                ", size='" + size + '\'' +
+                ", hitTime=" + hitTime +
+                ", writePolicy='" + writePolicy + '\'' +
+                ", allocationPolicy='" + allocationPolicy + '\'' +
                 '}';
     }
 }
