@@ -11,6 +11,13 @@ import java.util.List;
  **/
 public class Utils {
 
+    /**
+     * Get the number of cache line or number of set in the cache
+     * @param lineSize the size of each block
+     * @param way associativity of the cache
+     * @param cacheSizeString cache total size
+     * @return the number number of cache line in the cache
+     */
     public static int getNumberOfCacheLine(int lineSize, int way, String cacheSizeString) {
         int numberOfCacheLine = 0;
 
@@ -18,12 +25,16 @@ public class Utils {
             cacheSizeString = cacheSizeString.replaceAll("\\D+", "");
             int cacheSize = Integer.parseInt(cacheSizeString) * 1024;
             numberOfCacheLine = cacheSize / (lineSize * way);
-
         }
 
         return numberOfCacheLine;
     }
 
+    /**
+     * Log 2 base operation
+     * @param number the operand
+     * @return the log 2 base return
+     */
     private static int log2(int number) {
         return (int) (Math.log(number) / Math.log(2));
     }

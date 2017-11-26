@@ -27,6 +27,11 @@ public class InstructionManager {
         this.cacheConfList = cacheConfList;
     }
 
+    /**
+     * Initialization function
+     *
+     * @param fileName file name
+     */
     private void initializeFile(String fileName) {
 
         try {
@@ -38,6 +43,11 @@ public class InstructionManager {
         }
     }
 
+    /**
+     * This function process the input sequence from the file.
+     *
+     * @param inputSequenceFile this is the input sequence file.
+     */
     public void processInstructionFromFile(String inputSequenceFile) {
         String line;
         try {
@@ -61,9 +71,14 @@ public class InstructionManager {
         }
     }
 
+    /**
+     * This function process read operation and manage the hit or miss in cache line
+     *
+     * @param instructionValue this is the input from the instruction set
+     */
     private void processReadOperations(String instructionValue) {
         String binaryValue = Utils.get32BitBinFromInt(Integer.parseInt(instructionValue)); //The binary representation of the input
-            System.out.println("Instruction is [ld " + instructionValue + "]" + " binary value : " + binaryValue);
+        System.out.println("Instruction is [ld " + instructionValue + "]" + " binary value : " + binaryValue);
         boolean isMemoryAccessRequired = true;
         int accessTime = 0;
 
@@ -112,13 +127,13 @@ public class InstructionManager {
     }
 
     /**
-     * Default Read Policy is to check in level x if miss return false and if hit return true
+     * This function manages hit or miss in the cache level.
      *
      * @param cacheLevelX       Level of the cache
      * @param bitForTags        the bits for Tag
      * @param bitForSetIndex    the bit for set index
      * @param bitForBlockOffset the bits for block offset.
-     * @return true if tag matches other wise false
+     * @return the memory reference to the cache level. If miss return -1.
      */
     private int processCacheLevelRead(List<List<CacheLine>> cacheLevelX, String bitForTags, String bitForSetIndex,
                                       String bitForBlockOffset) {
@@ -131,21 +146,19 @@ public class InstructionManager {
 
         for (CacheLine block : cacheLine) {
             System.out.println(block);
-
             if (block.getValidBit() != 0 && block.getTag() == tagIntegerValue) { //Cache hit not need to check further
                 hitFlag = 1;
                 break;
             }
-
             if (block.getValidBit() == 0 || block.getTag() != tagIntegerValue) {
                 hitFlag = 0;
             }
+
             memoryReference++;
         }
 
         if (hitFlag == 0) {
             CacheLine lruBlock = Utils.getLRUBlock(cacheLine); //Get the least recently used block.
-
             lruBlock.setTag(tagIntegerValue);
             lruBlock.setValidBit(1);
             lruBlock.setTime(System.nanoTime()); //No need to explicitly add back the block as we are using reference.
@@ -156,10 +169,56 @@ public class InstructionManager {
         }
 
         return memoryReference;
-
     }
 
     private void processWriteOperations(String instructionValue) {
+        //TODO: Implement write Operations
+        String binaryValue = Utils.get32BitBinFromInt(Integer.parseInt(instructionValue)); //The binary representation of the input
+        System.out.println("Instruction is [st " + instructionValue + "]" + " binary value : " + binaryValue);
+        boolean isMemoryAccessRequired = true;
+        int accessTime = 0;
 
+        for (CacheConf cacheConf : cacheConfList) {
+            List<List<CacheLine>> cacheLevelX = cacheLevelMap.get(cacheConf.getLevel());
+            isMemoryAccessRequired = true;
+            accessTime += cacheConf.getHitTime();
+
+            int numberOfSetIndex = Utils.getNumberOfCacheLine(cacheConf.getLine(), cacheConf.getWay(), cacheConf.getSize()); //Total number of set index counting from 0
+            int numberOfBitForBlockOffset = Utils.getNumberOfBitForBlockOffset(cacheConf.getLine()); //Number of bit for block offset
+            int numberOfBitsForSetIndex = Utils.getNumberOfBitsForSetIndex(numberOfSetIndex); //Number of bits for set index
+            int numberOfBitsForTag = MACHINE_BIT - (numberOfBitForBlockOffset + numberOfBitsForSetIndex); //Considering 32 bit by default
+
+            //Extract bits from binaryValue of the input
+            String bitsForTag = binaryValue.substring(0, numberOfBitsForTag);
+            String bitsForSetIndex = binaryValue.substring(numberOfBitsForTag, numberOfBitsForTag + numberOfBitsForSetIndex);
+            String bitsForBlockOffset = binaryValue.substring(numberOfBitsForTag + numberOfBitsForSetIndex,
+                    numberOfBitsForTag + numberOfBitsForSetIndex + numberOfBitForBlockOffset);
+
+
+            int writeHit = processWriteLevelCache(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset,
+                    cacheConf.getWritePolicy(), cacheConf.getAllocationPolicy());
+
+            if (writeHit > 0) {
+                isMemoryAccessRequired = false; // Cache Hit so no need to access memory.
+                System.out.println("Cache Hit at level : " + writeHit);
+                break; //Hit in earlier level no need to proceed further
+            }
+        }
+
+        if (isMemoryAccessRequired) {
+            //TODO: perform memory access requests
+            accessTime += mainMemory.getHitTime();
+            System.out.println("Main Memory accessed");
+        }
+
+        System.out.println("Total Access Time for the Write operation[" + instructionValue + "] is : " + accessTime);
+        System.out.println("----------------------------------------------------------------------------------------------------");
+    }
+
+    private int processWriteLevelCache(List<List<CacheLine>> cacheLevelX, String bitForTags, String bitForSetIndex,
+                                       String bitForBlockOffset, String writePolicy, String allocatePolicy) {
+
+        //TODO: perform write operations
+        return 0;
     }
 }
