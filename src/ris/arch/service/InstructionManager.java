@@ -108,11 +108,10 @@ public class InstructionManager {
 //            System.out.println("For Level " + cacheConf.getLevel() + " Bit for block offset : "
 //                    + bitsForBlockOffset + " ,bit for Set Index : " + bitsForSetIndex + " ,Tag Bits: " + bitsForTag);
 
-            int readHit = processCacheLevelRead(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset);
+            int memoryRefReq = processCacheLevelRead(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset);
 
-            if (readHit > 0) {
+            if (memoryRefReq == MemoryRefReq.NO_REQ) {
                 isMemoryAccessRequired = false; // Cache Hit so no need to access memory.
-                System.out.println("Cache Hit at level : " + readHit);
                 break; //Hit in earlier level no need to proceed further
             }
         }
@@ -143,20 +142,19 @@ public class InstructionManager {
         int tagIntegerValue = Integer.parseInt(bitForTags, 2);
         List<CacheLine> cacheLine = cacheLevelX.get(setIndexIntegerValue);
         int hitFlag = 0;
-        int memoryReference = 1;
+        int memoryRefeReq = MemoryRefReq.NO_REQ;
 
         for (CacheLine block : cacheLine) {
             System.out.println(block);
             block.setTime(System.nanoTime()); //Accessing block so need to change the access time.
             if (block.getValidBit() != 0 && block.getTag() == tagIntegerValue) { //Cache hit not need to check further
                 hitFlag = 1;
+                memoryRefeReq = MemoryRefReq.NO_REQ; //Hit so no memory ref request to lower.
                 break;
             }
             if (block.getValidBit() == 0 || block.getTag() != tagIntegerValue) {
                 hitFlag = 0;
             }
-
-            memoryReference++;
         }
 
         if (hitFlag == 0) {
@@ -164,13 +162,13 @@ public class InstructionManager {
             lruBlock.setTag(tagIntegerValue);
             lruBlock.setValidBit(1);
             lruBlock.setTime(System.nanoTime()); //No need to explicitly add back the block as we are using reference.
-            memoryReference = -1; // No hit found set cache index to -1 for further access
+            memoryRefeReq = MemoryRefReq.READ_REQ;
 
             System.out.println("Changed Blocks :" + cacheLine);
             System.out.println();
         }
 
-        return memoryReference;
+        return memoryRefeReq;
     }
 
     private void processWriteOperations(String instructionValue) {
@@ -181,11 +179,10 @@ public class InstructionManager {
         int memoryRefReq = MemoryRefReq.WRITE_REQ;
         int cacheSize = cacheConfList.size();
 
-        for (int i = 0 ; i < cacheConfList.size(); i++) {
+        for (int i = 0; i < cacheConfList.size(); i++) {
             CacheConf cacheConf = cacheConfList.get(i);
             List<List<CacheLine>> cacheLevelX = cacheLevelMap.get(cacheConf.getLevel());
             isMemoryAccessRequired = true;
-            accessTime += cacheConf.getHitTime();
 
             int numberOfSetIndex = Utils.getNumberOfCacheLine(cacheConf.getLine(), cacheConf.getWay(), cacheConf.getSize()); //Total number of set index counting from 0
             int numberOfBitForBlockOffset = Utils.getNumberOfBitForBlockOffset(cacheConf.getLine()); //Number of bit for block offset
@@ -204,11 +201,10 @@ public class InstructionManager {
             }
 
             if (memoryRefReq == MemoryRefReq.READ_REQ) {
-                int readHit = processCacheLevelRead(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset);
+                memoryRefReq = processCacheLevelRead(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset);
 
-                if (readHit > 0) {
+                if (memoryRefReq == MemoryRefReq.NO_REQ) {
                     isMemoryAccessRequired = false; // Cache Hit so no need to access memory.
-                    System.out.println("Cache Read Hit at level : " + readHit);
                     break; //Hit in earlier level no need to proceed further
                 }
             }
@@ -217,6 +213,8 @@ public class InstructionManager {
                 memoryRefReq = processWriteLevelCache(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset,
                         cacheConf.getWritePolicy(), cacheConf.getAllocationPolicy());
             }
+
+            accessTime += cacheConf.getHitTime();
         }
 
         if (isMemoryAccessRequired) {
