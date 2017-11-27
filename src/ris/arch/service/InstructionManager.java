@@ -3,6 +3,7 @@ package ris.arch.service;
 import ris.arch.domain.CacheConf;
 import ris.arch.domain.CacheLine;
 import ris.arch.domain.MainMemory;
+import ris.arch.util.MemoryRefReq;
 import ris.arch.util.Utils;
 
 import java.io.BufferedReader;
@@ -146,6 +147,7 @@ public class InstructionManager {
 
         for (CacheLine block : cacheLine) {
             System.out.println(block);
+            block.setTime(System.nanoTime()); //Accessing block so need to change the access time.
             if (block.getValidBit() != 0 && block.getTag() == tagIntegerValue) { //Cache hit not need to check further
                 hitFlag = 1;
                 break;
@@ -172,13 +174,15 @@ public class InstructionManager {
     }
 
     private void processWriteOperations(String instructionValue) {
-        //TODO: Implement write Operations
         String binaryValue = Utils.get32BitBinFromInt(Integer.parseInt(instructionValue)); //The binary representation of the input
         System.out.println("Instruction is [st " + instructionValue + "]" + " binary value : " + binaryValue);
         boolean isMemoryAccessRequired = true;
         int accessTime = 0;
+        int memoryRefReq = MemoryRefReq.WRITE_REQ;
+        int cacheSize = cacheConfList.size();
 
-        for (CacheConf cacheConf : cacheConfList) {
+        for (int i = 0 ; i < cacheConfList.size(); i++) {
+            CacheConf cacheConf = cacheConfList.get(i);
             List<List<CacheLine>> cacheLevelX = cacheLevelMap.get(cacheConf.getLevel());
             isMemoryAccessRequired = true;
             accessTime += cacheConf.getHitTime();
@@ -194,14 +198,24 @@ public class InstructionManager {
             String bitsForBlockOffset = binaryValue.substring(numberOfBitsForTag + numberOfBitsForSetIndex,
                     numberOfBitsForTag + numberOfBitsForSetIndex + numberOfBitForBlockOffset);
 
+            if (memoryRefReq == MemoryRefReq.NO_REQ) {
+                isMemoryAccessRequired = false;
+                break;
+            }
 
-            int writeHit = processWriteLevelCache(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset,
-                    cacheConf.getWritePolicy(), cacheConf.getAllocationPolicy());
+            if (memoryRefReq == MemoryRefReq.READ_REQ) {
+                int readHit = processCacheLevelRead(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset);
 
-            if (writeHit > 0) {
-                isMemoryAccessRequired = false; // Cache Hit so no need to access memory.
-                System.out.println("Cache Hit at level : " + writeHit);
-                break; //Hit in earlier level no need to proceed further
+                if (readHit > 0) {
+                    isMemoryAccessRequired = false; // Cache Hit so no need to access memory.
+                    System.out.println("Cache Read Hit at level : " + readHit);
+                    break; //Hit in earlier level no need to proceed further
+                }
+            }
+
+            if (memoryRefReq == MemoryRefReq.WRITE_REQ) {
+                memoryRefReq = processWriteLevelCache(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset,
+                        cacheConf.getWritePolicy(), cacheConf.getAllocationPolicy());
             }
         }
 
@@ -219,6 +233,60 @@ public class InstructionManager {
                                        String bitForBlockOffset, String writePolicy, String allocatePolicy) {
 
         //TODO: perform write operations
-        return 0;
+        int setIndexIntegerValue = Integer.parseInt(bitForSetIndex, 2);
+        int tagIntegerValue = Integer.parseInt(bitForTags, 2);
+        List<CacheLine> cacheLine = cacheLevelX.get(setIndexIntegerValue);
+        int hitFlag = 0;
+        int memoryReq = MemoryRefReq.NO_REQ;
+
+        for (CacheLine block : cacheLine) {
+            System.out.println(block);
+
+            block.setTime(System.nanoTime());
+            if (block.getValidBit() != 0 && block.getTag() == tagIntegerValue) {
+                hitFlag = 1;
+                if (writePolicy.equalsIgnoreCase("WriteThrough")) {
+                    memoryReq = MemoryRefReq.WRITE_REQ;
+                }
+                if (writePolicy.equalsIgnoreCase("WriteBack")) {
+                    if (block.getDirtyBit() == 1) {
+                        memoryReq = MemoryRefReq.WRITE_REQ;
+                        block.setDirtyBit(0);
+                        System.out.println("Write Hit: " + block);
+                    } else {
+                        memoryReq = MemoryRefReq.NO_REQ;
+                        block.setDirtyBit(1);
+                        System.out.println("Write Hit: " + block);
+                    }
+                }
+
+                break;
+            }
+
+            if (block.getValidBit() == 0 || block.getTag() != tagIntegerValue) {
+                hitFlag = 0;
+            }
+        }
+        //Write Miss, So need to use allocate policies here.
+        if (hitFlag == 0) {
+
+            if (allocatePolicy.equalsIgnoreCase("WriteAllocate")) {
+                memoryReq = MemoryRefReq.READ_REQ; // As policy is Write Allocate, so bring the block to the cache from lower level. Send a READ REQ.
+                CacheLine lruBlock = Utils.getLRUBlock(cacheLine); //Get the least recently used block.
+                lruBlock.setTag(tagIntegerValue);
+                lruBlock.setValidBit(1);
+                lruBlock.setDirtyBit(1);
+                lruBlock.setTime(System.nanoTime());
+            }
+
+            if (allocatePolicy.equalsIgnoreCase("NoWriteAllocate")) {
+                memoryReq = MemoryRefReq.WRITE_REQ;
+            }
+
+            System.out.println("Changed Blocks :" + cacheLine);
+            System.out.println();
+        }
+
+        return memoryReq;
     }
 }

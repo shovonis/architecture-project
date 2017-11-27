@@ -31,21 +31,5 @@ public class Run {
 
         InstructionManager instructionManager = new InstructionManager(cacheLevelMap, mainMemory, cacheConfList);
         instructionManager.processInstructionFromFile(FileName.ACCESS_FILE);
-
-
-//        cacheLevel.forEach((k, v) -> {
-//            if (k.equalsIgnoreCase("L2")) {
-//                System.out.println("Level : " + k + " Cache : " + v);
-//            }
-//        });
-
-//        int count = 0;
-//        List<List<CacheLine>> cacheLines = cacheLevelMap.get("L1");
-//        for(List<CacheLine> x : cacheLines){
-//            for (CacheLine y: x){
-//                count ++;
-//            }
-//        }
-//        System.out.println(count);
     }
 }
