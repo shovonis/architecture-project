@@ -1,6 +1,7 @@
 import ris.arch.domain.CacheConf;
 import ris.arch.domain.CacheLine;
 import ris.arch.domain.MainMemory;
+import ris.arch.domain.ResultSummary;
 import ris.arch.service.CacheManager;
 import ris.arch.service.ConfFileProcessor;
 import ris.arch.service.InstructionManager;
@@ -30,6 +31,12 @@ public class Run {
         }
 
         InstructionManager instructionManager = new InstructionManager(cacheLevelMap, mainMemory, cacheConfList);
-        instructionManager.processInstructionFromFile(FileName.ACCESS_FILE);
+        Map<String, ResultSummary> resultSummary = instructionManager.processInstructionFromFile(FileName.ACCESS_FILE);
+
+        System.out.println("......................................FINAL.........................................");
+        resultSummary.forEach((k, v) -> {
+            System.out.println("Level: " + k);
+            System.out.println(v);
+        });
     }
 }
