@@ -1,9 +1,6 @@
 package ris.arch.service;
 
-import ris.arch.domain.CacheConf;
-import ris.arch.domain.CacheLine;
-import ris.arch.domain.MainMemory;
-import ris.arch.domain.ResultSummary;
+import ris.arch.domain.*;
 import ris.arch.util.MemoryRefReq;
 import ris.arch.util.Utils;
 
@@ -11,9 +8,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class InstructionManager {
     public static final int MACHINE_BIT = 32;
@@ -64,10 +59,10 @@ public class InstructionManager {
                 String instructionValue = Utils.getValueFromInstruction(line);
 
                 if (instructionType.equalsIgnoreCase("ld")) {
-                    processReadOperations(instructionValue, resultSummaryHashMap);
+                    processReq(instructionValue, resultSummaryHashMap, MemoryRefReq.READ_REQ);
                 }
                 if (instructionType.equalsIgnoreCase("st")) {
-                    processWriteOperations(instructionValue, resultSummaryHashMap);
+                    processReq(instructionValue, resultSummaryHashMap, MemoryRefReq.WRITE_REQ);
                 }
             }
 
@@ -78,23 +73,47 @@ public class InstructionManager {
         return resultSummaryHashMap;
     }
 
-    /**
-     * This function process read operation and manage the hit or miss in cache line
-     *
-     * @param instructionValue this is the input from the instruction set
-     */
-    private void processReadOperations(String instructionValue, Map<String, ResultSummary> resultSummaries) {
+
+    private void processReq(String instructionValue, Map<String, ResultSummary> resultSummaries, int type) {
         String binaryValue = Utils.get32BitBinFromInt(Integer.parseInt(instructionValue)); //The binary representation of the input
         System.out.println("Instruction is [ld " + instructionValue + "]" + " binary value : " + binaryValue);
-        boolean isMemoryAccessRequired = true;
+
+//        boolean isMemoryAccessRequired = true;
         int accessTime = 0;
-        int memoryRefReq = MemoryRefReq.READ_REQ;
+        int nextAccess = 0;
         ResultSummary resultSummary;
 
-        for (CacheConf cacheConf : cacheConfList) {
+        MemoryReferenceReq memoryReferenceReq = new MemoryReferenceReq(type, nextAccess);
+        Queue<MemoryReferenceReq> memoryReferenceQueue = new LinkedList<>();
+        memoryReferenceQueue.add(memoryReferenceReq);
+
+        while (!memoryReferenceQueue.isEmpty()) {
+            MemoryReferenceReq referenceReq = memoryReferenceQueue.remove();
+
+            if (referenceReq.getNextAccess() > cacheConfList.size() - 1) {
+                if(referenceReq.getMemoryRefReq() != MemoryRefReq.NO_REQ){
+                    resultSummary = resultSummaries.get("Main");
+                    if (resultSummary == null) {
+                        resultSummary = new ResultSummary();
+                        resultSummary.setLevel(mainMemory.getLevel());
+                    }
+
+                    accessTime += mainMemory.getHitTime();
+                    resultSummary.setHit(resultSummary.getHit() + 1);
+                    resultSummary.setAccess(resultSummary.getAccess() + 1);
+                    resultSummary.setTotalTime((int) (resultSummary.getTotalTime() + mainMemory.getHitTime()));
+                    resultSummaries.put("Main", resultSummary);
+                    System.out.println("Main Memory accessed");
+                }
+
+                break;
+            }
+
+            CacheConf cacheConf = cacheConfList.get(referenceReq.getNextAccess());
             List<List<CacheLine>> cacheLevelX = cacheLevelMap.get(cacheConf.getLevel());
-            isMemoryAccessRequired = true;
+
             resultSummary = resultSummaries.get(cacheConf.getLevel());
+
             if (resultSummary == null) {
                 resultSummary = new ResultSummary();
                 resultSummary.setLevel(cacheConf.getLevel());
@@ -111,50 +130,55 @@ public class InstructionManager {
             String bitsForBlockOffset = binaryValue.substring(numberOfBitsForTag + numberOfBitsForSetIndex,
                     numberOfBitsForTag + numberOfBitsForSetIndex + numberOfBitForBlockOffset);
 
-            //TODO: Debug Log in here. Remove in final version
-//            System.out.println(binaryValue);
-//            System.out.println("For Level " + cacheConf.getLevel() + " Number of bit for block offset : "
-//                    + numberOfBitForBlockOffset + " ,Number of bit for Set Index : " + numberOfBitsForSetIndex + " ,Tag Bit: " + numberOfBitsForTag);
-//
-//            System.out.println("For Level " + cacheConf.getLevel() + " Bit for block offset : "
-//                    + bitsForBlockOffset + " ,bit for Set Index : " + bitsForSetIndex + " ,Tag Bits: " + bitsForTag);
 
-            if (memoryRefReq == MemoryRefReq.READ_REQ + MemoryRefReq.WRITE_REQ) {
-                //TODO: Implement this one.
-                memoryRefReq = processWriteLevelCache(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset,
-                        cacheConf.getWritePolicy(), cacheConf.getAllocationPolicy(), resultSummary);
-
-                memoryRefReq = memoryRefReq - MemoryRefReq.WRITE_REQ; //Write to the lower level done.
-            }
-            if (memoryRefReq == MemoryRefReq.READ_REQ) {
-                memoryRefReq = processCacheLevelRead(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset, resultSummary);
-            }
-            if (memoryRefReq == MemoryRefReq.NO_REQ) {
-                isMemoryAccessRequired = false; // Cache Hit so no need to access memory.
-                break; //Hit in earlier level no need to proceed further
+            System.out.println("Number of set index: " + numberOfSetIndex + "Number of bit for block offset: "
+                    + numberOfBitForBlockOffset + "Number of Bit for Set index" + numberOfBitsForSetIndex + "Number of bit for Tag " + numberOfBitsForTag);
+            if (referenceReq.getMemoryRefReq() == MemoryRefReq.NO_REQ) {
+                break;
             }
 
-            accessTime += cacheConf.getHitTime();
-            resultSummary.setTotalTime((int) (resultSummary.getTotalTime() + cacheConf.getHitTime()));
-            resultSummaries.put(cacheConf.getLevel(), resultSummary);
-        }
+            if (referenceReq.getMemoryRefReq() == MemoryRefReq.READ_REQ) {
+                referenceReq = processCacheLevelRead(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset, resultSummary, referenceReq.getNextAccess());
 
-        if (isMemoryAccessRequired) {
-            resultSummary = resultSummaries.get("Memory");
-            if(resultSummary == null){
-                resultSummary = new ResultSummary();
-                resultSummary.setLevel(mainMemory.getLevel());
+                memoryReferenceQueue.add(referenceReq);
+
+                accessTime += cacheConf.getHitTime();
+                resultSummary.setTotalTime((int) (resultSummary.getTotalTime() + cacheConf.getHitTime()));
+                resultSummaries.put(cacheConf.getLevel(), resultSummary);
+
+
             }
-            accessTime += mainMemory.getHitTime();
-            resultSummary.setHit(resultSummary.getHit() + 1);
-            resultSummary.setAccess(resultSummary.getAccess() + 1);
-            resultSummary.setTotalTime((int) (resultSummary.getTotalTime() +  mainMemory.getHitTime()));
-            resultSummaries.put("Memory", resultSummary);
-            System.out.println("Main Memory accessed");
+
+            if (referenceReq.getMemoryRefReq() == MemoryRefReq.WRITE_REQ) {
+                referenceReq = processWriteLevelCache(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset,
+                        cacheConf.getWritePolicy(), cacheConf.getAllocationPolicy(), resultSummary, referenceReq.getNextAccess());
+
+                memoryReferenceQueue.add(referenceReq);
+
+                accessTime += cacheConf.getHitTime();
+                resultSummary.setTotalTime((int) (resultSummary.getTotalTime() + cacheConf.getHitTime()));
+                resultSummaries.put(cacheConf.getLevel(), resultSummary);
+
+            }
+
+            if (referenceReq.getMemoryRefReq() == MemoryRefReq.READ_REQ + MemoryRefReq.WRITE_REQ) {
+                referenceReq = processWriteLevelCache(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset,
+                        cacheConf.getWritePolicy(), cacheConf.getAllocationPolicy(), resultSummary, referenceReq.getNextAccess());
+                memoryReferenceQueue.add(referenceReq);
+
+                referenceReq = processCacheLevelRead(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset, resultSummary, referenceReq.getNextAccess());
+                memoryReferenceQueue.add(referenceReq);
+
+                accessTime += cacheConf.getHitTime();
+                resultSummary.setTotalTime((int) (resultSummary.getTotalTime() + cacheConf.getHitTime()));
+                resultSummaries.put(cacheConf.getLevel(), resultSummary);
+            }
         }
 
         System.out.println("Total Access Time for the Read operation[" + instructionValue + "] is : " + accessTime);
         System.out.println("----------------------------------------------------------------------------------------------------");
+
+
     }
 
     /**
@@ -166,8 +190,8 @@ public class InstructionManager {
      * @param bitForBlockOffset the bits for block offset.
      * @return the memory reference to the cache level. If miss return -1.
      */
-    private int processCacheLevelRead(List<List<CacheLine>> cacheLevelX, String bitForTags, String bitForSetIndex,
-                                      String bitForBlockOffset, ResultSummary resultSummary) {
+    private MemoryReferenceReq processCacheLevelRead(List<List<CacheLine>> cacheLevelX, String bitForTags, String bitForSetIndex,
+                                                     String bitForBlockOffset, ResultSummary resultSummary, int nextAccess) {
 
         int setIndexIntegerValue = Integer.parseInt(bitForSetIndex, 2);
         int tagIntegerValue = Integer.parseInt(bitForTags, 2);
@@ -178,10 +202,10 @@ public class InstructionManager {
 
         for (CacheLine block : cacheLine) {
             System.out.println(block);
-            block.setTime(System.nanoTime()); //Accessing block so need to change the access time.
-            if (block.getValidBit() != 0 && block.getTag() == tagIntegerValue) { //Cache hit not need to check further
+            if (block.getValidBit() == 1 && block.getTag() == tagIntegerValue) { //Cache hit not need to check further
                 hitFlag = 1;
                 resultSummary.setHit(resultSummary.getHit() + 1);
+                block.setTime(System.nanoTime());
                 memoryRefeReq = MemoryRefReq.NO_REQ; //Hit so no memory ref request to lower.
                 break;
             }
@@ -202,87 +226,16 @@ public class InstructionManager {
             } else {
                 memoryRefeReq = MemoryRefReq.READ_REQ;
             }
-
+            nextAccess++;
             System.out.println("Changed Blocks :" + cacheLine);
             System.out.println();
         }
 
-        return memoryRefeReq;
+        return new MemoryReferenceReq(memoryRefeReq, nextAccess);
     }
 
-    private void processWriteOperations(String instructionValue, Map<String, ResultSummary> resultSummaries) {
-        String binaryValue = Utils.get32BitBinFromInt(Integer.parseInt(instructionValue)); //The binary representation of the input
-        System.out.println("Instruction is [st " + instructionValue + "]" + " binary value : " + binaryValue);
-        boolean isMemoryAccessRequired = true;
-        int accessTime = 0;
-        int memoryRefReq = MemoryRefReq.WRITE_REQ;
-        ResultSummary resultSummary;
-
-        for (CacheConf cacheConf : cacheConfList) {
-            List<List<CacheLine>> cacheLevelX = cacheLevelMap.get(cacheConf.getLevel());
-            isMemoryAccessRequired = true;
-
-            resultSummary = resultSummaries.get(cacheConf.getLevel());
-            if (resultSummary == null) {
-                resultSummary = new ResultSummary();
-                resultSummary.setLevel(cacheConf.getLevel());
-            }
-
-            int numberOfSetIndex = Utils.getNumberOfCacheLine(cacheConf.getLine(), cacheConf.getWay(), cacheConf.getSize()); //Total number of set index counting from 0
-            int numberOfBitForBlockOffset = Utils.getNumberOfBitForBlockOffset(cacheConf.getLine()); //Number of bit for block offset
-            int numberOfBitsForSetIndex = Utils.getNumberOfBitsForSetIndex(numberOfSetIndex); //Number of bits for set index
-            int numberOfBitsForTag = MACHINE_BIT - (numberOfBitForBlockOffset + numberOfBitsForSetIndex); //Considering 32 bit by default
-
-            //Extract bits from binaryValue of the input
-            String bitsForTag = binaryValue.substring(0, numberOfBitsForTag);
-            String bitsForSetIndex = binaryValue.substring(numberOfBitsForTag, numberOfBitsForTag + numberOfBitsForSetIndex);
-            String bitsForBlockOffset = binaryValue.substring(numberOfBitsForTag + numberOfBitsForSetIndex,
-                    numberOfBitsForTag + numberOfBitsForSetIndex + numberOfBitForBlockOffset);
-
-            if (memoryRefReq == MemoryRefReq.NO_REQ) {
-                isMemoryAccessRequired = false;
-                break;
-            }
-
-            if (memoryRefReq == MemoryRefReq.READ_REQ) {
-                memoryRefReq = processCacheLevelRead(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset, resultSummary);
-
-                if (memoryRefReq == MemoryRefReq.NO_REQ) {
-                    isMemoryAccessRequired = false; // Cache Hit so no need to access memory.
-                    break; //Hit in earlier level no need to proceed further
-                }
-            }
-
-            if (memoryRefReq == MemoryRefReq.WRITE_REQ) {
-                memoryRefReq = processWriteLevelCache(cacheLevelX, bitsForTag, bitsForSetIndex, bitsForBlockOffset,
-                        cacheConf.getWritePolicy(), cacheConf.getAllocationPolicy(), resultSummary);
-            }
-
-            accessTime += cacheConf.getHitTime();
-            resultSummary.setTotalTime((int) (resultSummary.getTotalTime() + cacheConf.getHitTime()));
-            resultSummaries.put(cacheConf.getLevel(), resultSummary);
-        }
-
-        if (isMemoryAccessRequired) {
-            resultSummary = resultSummaries.get("Memory");
-            if(resultSummary == null){
-                resultSummary = new ResultSummary();
-                resultSummary.setLevel(mainMemory.getLevel());
-            }
-            accessTime += mainMemory.getHitTime();
-            resultSummary.setHit(resultSummary.getHit() + 1);
-            resultSummary.setAccess(resultSummary.getAccess() + 1);
-            resultSummary.setTotalTime((int) (resultSummary.getTotalTime() + mainMemory.getHitTime()));
-            resultSummaries.put("Memory", resultSummary);
-            System.out.println("Main Memory accessed");
-        }
-
-        System.out.println("Total Access Time for the Write operation[" + instructionValue + "] is : " + accessTime);
-        System.out.println("----------------------------------------------------------------------------------------------------");
-    }
-
-    private int processWriteLevelCache(List<List<CacheLine>> cacheLevelX, String bitForTags, String bitForSetIndex,
-                                       String bitForBlockOffset, String writePolicy, String allocatePolicy, ResultSummary resultSummary) {
+    private MemoryReferenceReq processWriteLevelCache(List<List<CacheLine>> cacheLevelX, String bitForTags, String bitForSetIndex,
+                                                      String bitForBlockOffset, String writePolicy, String allocatePolicy, ResultSummary resultSummary, int nextAccess) {
 
         int setIndexIntegerValue = Integer.parseInt(bitForSetIndex, 2);
         int tagIntegerValue = Integer.parseInt(bitForTags, 2);
@@ -294,25 +247,25 @@ public class InstructionManager {
         for (CacheLine block : cacheLine) {
             System.out.println(block);
 
-            block.setTime(System.nanoTime());
             if (block.getValidBit() != 0 && block.getTag() == tagIntegerValue) {
                 hitFlag = 1;
+                block.setTime(System.nanoTime());
                 resultSummary.setHit(resultSummary.getHit() + 1);
                 if (writePolicy.equalsIgnoreCase("WriteThrough")) {
                     memoryReq = MemoryRefReq.WRITE_REQ;
                     System.out.println("Write Hit. Policy is: " + writePolicy + "Block is: " + block + " WRITE REQ Sent to lower level");
+                    nextAccess++;
                 }
                 if (writePolicy.equalsIgnoreCase("WriteBack")) {
                     if (block.getDirtyBit() == 1) {
-                        memoryReq = MemoryRefReq.WRITE_REQ;
+                        memoryReq = MemoryRefReq.NO_REQ;
                         block.setDirtyBit(0);
-                        block.setTime(System.nanoTime());
+                        nextAccess++;
                         System.out.println("Write Hit. Policy is: " + writePolicy + "Block is: " + block + " WRITE REQ Sent to lower level");
 
                     } else {
                         memoryReq = MemoryRefReq.NO_REQ;
                         block.setDirtyBit(1);
-                        block.setTime(System.nanoTime());
                         System.out.println("Write Hit. Policy is: " + writePolicy + "Block is: " + block + " NO REQ Sent to lower level.");
                     }
                 }
@@ -343,9 +296,10 @@ public class InstructionManager {
                 System.out.println("Write Miss. Policy is: " + allocatePolicy + " WRITE REQ sent to lower level");
             }
 
+            nextAccess++;
             System.out.println();
         }
 
-        return memoryReq;
+        return new MemoryReferenceReq(memoryReq, nextAccess);
     }
 }
