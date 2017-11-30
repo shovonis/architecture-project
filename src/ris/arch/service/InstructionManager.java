@@ -91,7 +91,7 @@ public class InstructionManager {
             MemoryReferenceReq referenceReq = memoryReferenceQueue.remove();
 
             if (referenceReq.getNextAccess() > cacheConfList.size() - 1) {
-                if(referenceReq.getMemoryRefReq() != MemoryRefReq.NO_REQ){
+                if (referenceReq.getMemoryRefReq() != MemoryRefReq.NO_REQ) {
                     resultSummary = resultSummaries.get("Main");
                     if (resultSummary == null) {
                         resultSummary = new ResultSummary();
@@ -193,7 +193,14 @@ public class InstructionManager {
     private MemoryReferenceReq processCacheLevelRead(List<List<CacheLine>> cacheLevelX, String bitForTags, String bitForSetIndex,
                                                      String bitForBlockOffset, ResultSummary resultSummary, int nextAccess) {
 
-        int setIndexIntegerValue = Integer.parseInt(bitForSetIndex, 2);
+        int setIndexIntegerValue;
+        if (bitForSetIndex.equalsIgnoreCase("")) {
+            setIndexIntegerValue = 0;
+        } else {
+            setIndexIntegerValue = Integer.parseInt(bitForSetIndex, 2);
+        }
+
+
         int tagIntegerValue = Integer.parseInt(bitForTags, 2);
         List<CacheLine> cacheLine = cacheLevelX.get(setIndexIntegerValue);
         int hitFlag = 0;
@@ -237,7 +244,13 @@ public class InstructionManager {
     private MemoryReferenceReq processWriteLevelCache(List<List<CacheLine>> cacheLevelX, String bitForTags, String bitForSetIndex,
                                                       String bitForBlockOffset, String writePolicy, String allocatePolicy, ResultSummary resultSummary, int nextAccess) {
 
-        int setIndexIntegerValue = Integer.parseInt(bitForSetIndex, 2);
+        int setIndexIntegerValue;
+        if (bitForSetIndex.equalsIgnoreCase("")) {
+            setIndexIntegerValue = 0;
+        } else {
+            setIndexIntegerValue = Integer.parseInt(bitForSetIndex, 2);
+        }
+
         int tagIntegerValue = Integer.parseInt(bitForTags, 2);
         List<CacheLine> cacheLine = cacheLevelX.get(setIndexIntegerValue);
         int hitFlag = 0;

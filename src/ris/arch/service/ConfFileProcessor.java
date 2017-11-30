@@ -3,6 +3,7 @@ package ris.arch.service;
 import ris.arch.domain.CacheConf;
 import ris.arch.domain.MainMemory;
 import ris.arch.util.FileName;
+import ris.arch.util.Utils;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -42,11 +43,12 @@ public class ConfFileProcessor {
                     CacheConf cacheConf = new CacheConf();
                     cacheConf.setLevel(line.split(":")[1]);
                     cacheConf.setLine(Integer.parseInt(bufferedReader.readLine().split(":")[1]));
-                    cacheConf.setWay(Integer.parseInt(bufferedReader.readLine().split(":")[1]));
+                    cacheConf.setTmpWay(bufferedReader.readLine().split(":")[1]);
                     cacheConf.setSize(bufferedReader.readLine().split(":")[1]);
                     cacheConf.setHitTime(Long.parseLong(bufferedReader.readLine().split(":")[1]));
                     cacheConf.setWritePolicy(bufferedReader.readLine().split(":")[1]);
                     cacheConf.setAllocationPolicy(bufferedReader.readLine().split(":")[1]);
+                    cacheConf.setWay(Utils.getWay(cacheConf.getTmpWay(), cacheConf.getLine(), cacheConf.getSize()));
 
                     listOfCacheConf.add(cacheConf);
                     System.out.println(cacheConf);

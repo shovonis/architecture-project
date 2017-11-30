@@ -8,6 +8,7 @@ public class CacheConf {
     private long hitTime;
     private String writePolicy;
     private String allocationPolicy;
+    private String tmpWay;
 
 
     public String getLevel() {
@@ -64,6 +65,14 @@ public class CacheConf {
 
     public void setAllocationPolicy(String allocationPolicy) {
         this.allocationPolicy = allocationPolicy;
+    }
+
+    public String getTmpWay() {
+        return tmpWay;
+    }
+
+    public void setTmpWay(String tmpWay) {
+        this.tmpWay = tmpWay;
     }
 
     @Override

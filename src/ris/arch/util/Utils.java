@@ -13,8 +13,9 @@ public class Utils {
 
     /**
      * Get the number of cache line or number of set in the cache
-     * @param lineSize the size of each block
-     * @param way associativity of the cache
+     *
+     * @param lineSize        the size of each block
+     * @param way             associativity of the cache
      * @param cacheSizeString cache total size
      * @return the number number of cache line in the cache
      */
@@ -30,8 +31,25 @@ public class Utils {
         return numberOfCacheLine;
     }
 
+    public static int getWay(String way, int lineSize, String cacheSizeString) {
+        int intWay = 0;
+        if (way.equalsIgnoreCase("Full")) {
+            if (cacheSizeString.endsWith("K")) {
+                cacheSizeString = cacheSizeString.replaceAll("\\D+", "");
+                int cacheSize = Integer.parseInt(cacheSizeString) * 1024;
+                intWay = cacheSize / lineSize;
+            }
+
+        } else {
+            intWay = Integer.parseInt(way);
+        }
+
+        return intWay;
+    }
+
     /**
      * Log 2 base operation
+     *
      * @param number the operand
      * @return the log 2 base return
      */

@@ -14,9 +14,12 @@ public class CacheManager {
 
     public List<List<CacheLine>> getCacheLines(CacheConf cacheConf) {
         int numberOfCacheLine = Utils.getNumberOfCacheLine(cacheConf.getLine(), cacheConf.getWay(), cacheConf.getSize());
+
+
         System.out.println("Number of " + cacheConf.getLevel() + " cache Line : " + numberOfCacheLine);
         System.out.println();
         cacheList = new ArrayList<>();
+
         for (int i = 0; i < numberOfCacheLine; i++) {
             cacheLine = new ArrayList<>();
             for (int j = 0; j < cacheConf.getWay(); j++) {
