@@ -1,5 +1,8 @@
 package ris.arch.domain;
 
+/**
+ * This is the block of cache line of the cache. Contains all the information to implement the cache
+ */
 public class CacheLine {
     private String level;
     private int validBit = 0;

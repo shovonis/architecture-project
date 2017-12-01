@@ -19,8 +19,8 @@ it using: **mkdir bin**
 Use the run script to run the project: **`./run.sh`**
 
 # Test:
-All the test input file contains in te **`resource directory`**. To Run a specific test file just put
-the` mem.conf and access.in` files into to **`src directory`** and compile and run.
+All the test input file contains in the **`resource directory`**. To Run a specific test file just put
+the ` mem.conf and access.in` files into to **`src directory`** and compile and run.
 
 
 Project Github Link: https://github.com/shovonis/architecture-project 

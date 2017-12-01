@@ -1,5 +1,8 @@
 package ris.arch.domain;
 
+/**
+ * Store the result from the cache and main memory.
+ */
 public class ResultSummary {
     private String level;
     private int access = 0;
@@ -49,12 +52,11 @@ public class ResultSummary {
 
     @Override
     public String toString() {
-        return "ResultSummary{" +
-                "level='" + level + '\'' +
-                ", access=" + access +
-                ", hit=" + hit +
-                ", miss=" + miss +
-                ", totalTime=" + totalTime +
-                '}';
+        return "" +
+                "Level='" + level + '\'' +
+                "\n access=" + access +
+                "\n hit=" + hit +
+                "\n miss=" + miss +
+                "";
     }
 }

@@ -1,5 +1,10 @@
 package ris.arch.domain;
 
+
+/**
+ * Cache conf is the entity class for storing the cache config info from the conf file.
+ * This will eventually be loaded and act like the cache
+ */
 public class CacheConf {
     private String level;
     private int line;

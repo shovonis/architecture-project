@@ -31,10 +31,17 @@ public class Utils {
         return numberOfCacheLine;
     }
 
+    /**
+     * The the integer associativity from the params
+     * @param way way in string
+     * @param lineSize size of the line
+     * @param cacheSizeString cache size
+     * @return the integer value of the way
+     */
     public static int getWay(String way, int lineSize, String cacheSizeString) {
         int intWay = 0;
         if (way.equalsIgnoreCase("Full")) {
-            if (cacheSizeString.endsWith("K")) {
+            if (cacheSizeString.endsWith("K")) { //Only implemented for K. Not compatible with others.
                 cacheSizeString = cacheSizeString.replaceAll("\\D+", "");
                 int cacheSize = Integer.parseInt(cacheSizeString) * 1024;
                 intWay = cacheSize / lineSize;
@@ -64,6 +71,11 @@ public class Utils {
         return null;
     }
 
+    /**
+     * Return the value from the instruction
+     * @param instruction the instruction
+     * @return the value from the instruction
+     */
     public static String getValueFromInstruction(String instruction) {
         if (instruction != null) {
             return instruction.split(" ")[1];
@@ -71,19 +83,39 @@ public class Utils {
         return null;
     }
 
+    /**
+     * Return value in 32 bit format
+     * @param number the number
+     * @return value in 32 bit
+     */
     public static String get32BitBinFromInt(int number) {
         String binAddr = Integer.toBinaryString(number);
         return String.format("%032d", new BigInteger(binAddr));
     }
 
+    /**
+     * Return the block offset
+     * @param lineSize
+     * @return
+     */
     public static int getNumberOfBitForBlockOffset(int lineSize) {
         return log2(lineSize);
     }
 
+    /**
+     * Return the set index
+     * @param numberOfSetIndex
+     * @return
+     */
     public static int getNumberOfBitsForSetIndex(int numberOfSetIndex) {
         return log2(numberOfSetIndex);
     }
 
+    /**
+     * Return the Least recently used block based on time
+     * @param cacheLine List of Cache Line
+     * @return Cache Line
+     */
     public static CacheLine getLRUBlock(List<CacheLine> cacheLine) {
         CacheLine lruBlock = null;
         lruBlock = cacheLine.stream().min(Comparator.comparingLong(CacheLine::getTime)).get();

@@ -1,12 +1,13 @@
 package ris.arch.domain;
 
-import ris.arch.util.MemoryRefReq;
-
-public class MemoryReferenceReq {
+/**
+ * This class contains the Request that will be processed next in the cache or memory
+ */
+public class ReferenceRequest {
     private int memoryRefReq;
     private int nextAccess;
 
-    public MemoryReferenceReq(int memoryRefReq, int nextAccess) {
+    public ReferenceRequest(int memoryRefReq, int nextAccess) {
         this.memoryRefReq = memoryRefReq;
         this.nextAccess = nextAccess;
     }

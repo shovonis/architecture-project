@@ -1,5 +1,8 @@
 package ris.arch.domain;
 
+/**
+ * Main memory entity class.
+ */
 public class MainMemory {
     private String level;
     private long hitTime;

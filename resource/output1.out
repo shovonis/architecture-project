@@ -1,0 +1,16 @@
+Level='L1'
+ access=1000
+ hit=904
+ miss=96
+Level='L2'
+ access=96
+ hit=46
+ miss=50
+Level='L3'
+ access=96
+ hit=46
+ miss=50
+Level='Main'
+ access=50
+ hit=50
+ miss=0
