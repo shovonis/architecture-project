@@ -167,6 +167,7 @@ public class InstructionManager {
                 accessTime += cacheConf.getHitTime();
                 resultSummary.setTotalTime((int) (resultSummary.getTotalTime() + cacheConf.getHitTime()));
                 resultSummaries.put(cacheConf.getLevel(), resultSummary);
+                continue;
             }
 
             //Write Request to the Cache
@@ -178,6 +179,7 @@ public class InstructionManager {
                 accessTime += cacheConf.getHitTime();
                 resultSummary.setTotalTime((int) (resultSummary.getTotalTime() + cacheConf.getHitTime()));
                 resultSummaries.put(cacheConf.getLevel(), resultSummary);
+                continue;
             }
 
             //Read And Write req to the Cache. (Might be needed in case of WriteAllocate and WriteBack
@@ -340,6 +342,9 @@ public class InstructionManager {
             if (allocatePolicy.equalsIgnoreCase("WriteAllocate")) {
                 memoryReq = MemoryRefReq.READ_REQ; // As policy is Write Allocate, so bring the block to the cache from lower level. Send a READ REQ.
                 CacheLine lruBlock = Utils.getLRUBlock(cacheLine); //Get the least recently used block.
+                if(lruBlock.getDirtyBit() == 1){
+                    memoryReq = MemoryRefReq.WRITE_REQ;
+                }
                 lruBlock.setTag(tagIntegerValue);
                 lruBlock.setValidBit(1);
                 lruBlock.setDirtyBit(1);

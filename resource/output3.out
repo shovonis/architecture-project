@@ -1,0 +1,14 @@
+Level='L1'
+ access=400
+ hit=231
+ miss=169
+Level='L2'
+ access=205
+ hit=146
+ miss=59
+Level='Main'
+ access=122
+ hit=122
+ miss=0
+
+ Total Time: 137120
